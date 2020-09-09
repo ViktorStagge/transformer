@@ -15,6 +15,7 @@ class _Config:
     dataset: str = 'pg-19'
     version: int = 1
     verbose: bool = True
+    use_positional_encoding: bool = True
 
     # ## Run ### #
     tokenize: bool = False

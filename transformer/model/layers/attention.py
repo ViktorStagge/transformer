@@ -14,10 +14,10 @@ _default = OmegaConf.create(dict(d_k=64,
 
 class ScaledDotProductAttention(Layer):
     def __init__(self,
+                 d_model=None,
                  d_k=None,
                  d_q=None,
                  d_v=None,
-                 d_model=None,
                  verbose=False,
                  **kwargs):
         if verbose:
@@ -45,8 +45,8 @@ class ScaledDotProductAttention(Layer):
             if len(input_shape) == 3:
                 shape_q, shape_k, shape_v = input_shape
             elif len(input_shape) == 2:
-                shape_q, shape_k = input_shape
-                shape_v = shape_k
+                shape_k, shape_v = input_shape
+                shape_q = shape_k
         else:
             assert isinstance(input_shape, tuple)
             shape_q = input_shape
@@ -80,8 +80,8 @@ class ScaledDotProductAttention(Layer):
             if len(x) == 3:
                 q, k, v = x
             elif len(x) == 2:
-                q, k = x
-                v = k
+                k, v = x  # TODO: Sort out q, k and v  # before: q, [k, v] = x
+                q = k     # TODO: Sort out q, k and v
             else:
                 raise NotImplementedError('ScaledDotProductAttention is not implemented for 3D-input or above')
         else:
@@ -125,8 +125,8 @@ class ScaledDotProductAttention(Layer):
             if len(input_shape) == 3:
                 shape_q, shape_k, shape_v = input_shape
             if len(input_shape) == 2:
-                shape_q, shape_k = input_shape
-                shape_v = shape_k
+                shape_k, shape_v = input_shape
+                shape_q = shape_k
         else:
             shape_q = input_shape
             shape_k = input_shape
@@ -140,8 +140,8 @@ class ScaledDotProductAttention(Layer):
     def get_config(self):
         config = super().get_config()
         config.update(d_model=self.d_model,
-                      d_k=self.d_k,
                       d_q=self.d_q,
+                      d_k=self.d_k,
                       d_v=self.d_v,
                       verbose=self.verbose)
         return config
@@ -149,12 +149,12 @@ class ScaledDotProductAttention(Layer):
 
 class MultiHeadAttention(Layer):
     def __init__(self,
+                 sequence_length=None,
                  d_heads=None,
+                 d_model=None,
                  d_k=None,
                  d_q=None,
                  d_v=None,
-                 d_model=None,
-                 sequence_length=None,
                  verbose=False,
                  **kwargs):
         if d_q not in (d_k, None):

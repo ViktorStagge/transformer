@@ -12,7 +12,3 @@ data/*
 # Pycharm Folder
 **/.idea/
 **/__pycache__/
-
-
-# Temporary .gitignore on the Transformer model during rewrite:
-transformer/model/model.py
