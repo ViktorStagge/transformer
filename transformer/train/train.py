@@ -1,5 +1,6 @@
 import os
 import pickle
+
 from tqdm import tqdm
 from sometimer import timer, time_this_method
 
@@ -7,7 +8,8 @@ from transformer.config import get_config
 from transformer.preprocess.tokenize import Tokenizer
 from transformer.model import Transformer
 from transformer.utils.generators import next_token_batch_generator
-from transformer.model.optimizers import get_optimizer
+from transformer.train.callbacks import WriteLogsToFile, \
+                                        SaveModel
 
 
 def train(config_path: str = 'default',
@@ -62,29 +64,27 @@ def train(config_path: str = 'default',
 
     # TODO:
     if config.continue_training and os.path.exists(config.model_output_path):
-        ct = Transformer.load(config.model_output_path, compile=False)
+        model = Transformer.load(config.model_output_path, compile=False)
     else:
-        ct = Transformer(d_layers=config.d_layers,
-                         sequence_length=config.sequence_length,
-                         d_model=config.d_model,
-                         memory_size=config.memory_size,
-                         compressed_memory_size=config.compressed_memory_size,
-                         d_k=config.d_k,
-                         d_heads=config.d_heads,
-                         output_size=config.output_size,
-                         batch_size=config.batch_size,
-                         vocab_size=config.vocab_size,
-                         use_relative_encoding=False)
+        model = Transformer(sequence_length=config.sequence_length,
+                            d_layers=config.d_layers,
+                            d_heads=config.d_heads,
+                            d_model=config.d_model,
+                            d_k=config.d_k,
+                            d_v=config.d_v,
+                            d_mlp_hidden=config.d_mlp_hidden,
+                            batch_size=config.batch_size,
+                            vocab_size=config.vocab_size,
+                            use_positional_encoding=True)
 
-    ct.compile(optimizer='Adam',
-               loss='categorical_crossentropy',
-               metrics=['accuracy'],
-               metrics_reconstruction_loss=True)
+    model.compile(optimizer='Adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
 
     if config.verbose:
-        print(ct.summary())
+        print(model.summary())
 
-    generator = next_token_batch_generator(ct=ct,
+    generator = next_token_batch_generator(ct=ct,  # TODO: change input structure
                                            data=training_data,
                                            data_path=None,
                                            epoch_steps=config.train_steps,
@@ -96,8 +96,8 @@ def train(config_path: str = 'default',
                  SaveModel(filepath=config.model_output_path,
                            save_every_n_batches=config.save_interval)]
 
-    ct.fit_generator(generator(),
-                     steps_per_epoch=config.steps_per_epoch,
-                     epochs=config.epochs,
-                     callbacks=callbacks,
-                     shuffle=False)
+    model.fit_generator(generator(),
+                        steps_per_epoch=config.steps_per_epoch,
+                        epochs=config.epochs,
+                        callbacks=callbacks,
+                        shuffle=False)
