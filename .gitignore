@@ -1,0 +1,18 @@
+# input & output data. keep folder
+data/*
+!data/.gitignore
+!data/README.md
+
+
+# Jupyter Notebooks
+# notebooks/
+**/.ipynb_checkpoints/
+
+
+# Pycharm Folder
+**/.idea/
+**/__pycache__/
+
+
+# Temporary .gitignore on the Transformer model during rewrite:
+transformer/model/model.py
