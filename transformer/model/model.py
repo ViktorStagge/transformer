@@ -14,7 +14,6 @@ from keras.layers import Embedding, \
                          concatenate as Concatenate
 from keras.models import Model
 
-from transformer.config import get_config
 from transformer.model.layers import MultiHeadAttention, \
                                      ScaledDotProductAttention, \
                                      LayerNormalization, \
@@ -22,11 +21,9 @@ from transformer.model.layers import MultiHeadAttention, \
                                      PositionalEncoding
 from transformer.model.optimizers import get_optimizer
 
-config = get_config(path='default')
-
 
 class Transformer(Model):
-    """Transformer as described in "Attention is All You Need" by [...].
+    """Transformer as described in "Attention is All You Need" by Vaswani et. al.
     """
     def __init__(self,
                  sequence_length,
@@ -52,8 +49,6 @@ class Transformer(Model):
             d_k = d_model  # // d_heads
         if d_mlp_hidden is None:
             d_mlp_hidden = d_model
-        if use_positional_encoding is None:
-            use_positional_encoding = config.use_positional_encoding
 
         d_q = d_k
 
@@ -63,6 +58,7 @@ class Transformer(Model):
         x_output = Input(shape=(sequence_length,),
                          name='x_output')
 
+        # Embed & Encode the input/output sequence
         embedder = Embedder(sequence_length=sequence_length,
                             vocab_size=vocab_size,
                             d_model=d_model,
@@ -235,8 +231,6 @@ class Encoder(Model):
                           'correctly train on all data.')
         if d_layers <= 0:
             warnings.warn('d_layers is 0, not using any layers of the Encoder.')
-        if use_positional_encoding is None:
-            use_positional_encoding = config.use_positional_encoding
 
         d_q = d_k
 
@@ -326,8 +320,6 @@ class Decoder(Model):
                           'correctly train on all data.')
         if d_layers <= 0:
             warnings.warn('d_layers is 0, not using any layers of the Encoder.')
-        if use_positional_encoding is None:
-            use_positional_encoding = config.use_positional_encoding
 
         d_q = d_k
 
@@ -339,20 +331,20 @@ class Decoder(Model):
 
         h = h_output
         for i in range(d_layers):
-            # Masked Multi-Head Attention
-            masked_sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_model) for _ in range(d_heads)]  # TODO: d_q, d_k, d_v
-            masked_sdpa = [sdpa_layer([h, h]) for sdpa_layer in masked_sdpa_layers]  # TODO: check [h_output, h_output]
+            # Masked Multi-Head Attention [masked before embedding h_output]
+            masked_sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]  # TODO: d_q, d_k, d_v
+            masked_sdpa = [sdpa_layer([h, h]) for sdpa_layer in masked_sdpa_layers]
 
-            masked_mha = MaskedMultiHeadAttention(d_heads=d_heads,
-                                                  d_model=d_model,
-                                                  d_k=d_k,
-                                                  d_v=d_model,
-                                                  name=f'masked_multihead_attention_L{i}')(masked_sdpa)
+            masked_mha = MultiHeadAttention(d_heads=d_heads,
+                                            d_model=d_model,
+                                            d_k=d_k,
+                                            d_v=d_model,
+                                            name=f'masked_multihead_attention_L{i}')(masked_sdpa)
             masked_mha_skip = Add(name=f'masked_mha_skip_L{i}')([h, masked_mha])
             masked_a = LayerNormalization(name=f'masked_mha_layer_norm_L{i}')(masked_mha_skip)
 
             # Multi-Head Attention
-            sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_model) for _ in range(d_heads)]  # TODO: d_q, d_k, d_v
+            sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]  # TODO: d_q, d_k, d_v. before d_model, d_k, d_model
             sdpa = [sdpa_layer([z_encoder, masked_a]) for sdpa_layer in sdpa_layers]  # TODO: check [h, h]
 
             mha = MultiHeadAttention(d_heads=d_heads,
@@ -427,6 +419,7 @@ class Embedder(Model):
         embedding_layer = Embedding(input_dim=vocab_size,
                                     output_dim=d_model,
                                     embeddings_initializer='uniform',
+                                    mask_zero=True,
                                     name='word_embedding')
 
         encoder_embedding = embedding_layer(x)

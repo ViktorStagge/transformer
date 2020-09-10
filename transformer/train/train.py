@@ -1,8 +1,8 @@
 import os
 import pickle
 
-from tqdm import tqdm
 from sometimer import timer, time_this_method
+from typing import Optional, Iterable
 
 from transformer.config import get_config
 from transformer.preprocess.tokenize import Tokenizer
@@ -10,9 +10,11 @@ from transformer.model import Transformer
 from transformer.utils.generators import next_token_batch_generator
 from transformer.train.callbacks import WriteLogsToFile, \
                                         SaveModel
+from transformer.utils.utils import get_tqdm
 
 
 def train(config_path: str = 'default',
+          tqdm: Optional[Iterable] = None,
           **kwargs):
     """Trains a Transformer model on the config-specified dataset.
 
@@ -22,6 +24,7 @@ def train(config_path: str = 'default',
     respective dataset used.
     """
     config = get_config(config_path)
+    tqdm = get_tqdm(tqdm or config.get('tqdm'))
 
     # ### Setup ### #
     if config.tokenize:
@@ -62,7 +65,6 @@ def train(config_path: str = 'default',
     config.train_steps = config.train_steps or len(training_data)
     config.steps_per_epoch = config.steps_per_epoch or config.train_steps//config.sequence_length - 1
 
-    # TODO:
     if config.continue_training and os.path.exists(config.model_output_path):
         model = Transformer.load(config.model_output_path, compile=False)
     else:
@@ -84,8 +86,7 @@ def train(config_path: str = 'default',
     if config.verbose:
         print(model.summary())
 
-    generator = next_token_batch_generator(ct=ct,  # TODO: change input structure
-                                           data=training_data,
+    generator = next_token_batch_generator(data=training_data,
                                            data_path=None,
                                            epoch_steps=config.train_steps,
                                            sequence_length=config.sequence_length,

@@ -106,7 +106,7 @@ class Tokenizer(ByteLevelBPETokenizer):
         encodings = []
         for path in tqdm(input_paths):
             with open(path) as file:
-                text = file.read()
+                text = file.read()  # TODO: file.read_lines() -> <end-of-sample-token> -> self.encode_batch(...)
             encoding = self.encode(text)
 
             if tokens_output_dir is not None:

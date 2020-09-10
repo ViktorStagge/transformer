@@ -3,41 +3,48 @@ from keras.utils import to_categorical
 
 
 def next_token_batch_generator(*,
-                               ct,
                                data=None,
                                data_path=None,
                                epochs=None,
                                epoch_steps=None,
+                               shuffle=False,
                                batch_size,
                                sequence_length,
                                vocab_size):
     """Creates a generator which returns a batch of data, suitable for using with keras.Model.fit_generator()
-
-    Aligns each sample of the batch so that the latest available token is in the last index of that sample.
-    This is suboptimal in terms of computation. However, using a single entry, and then masking the input for
-    each respective sample would likely cause this framework to almost entirely deviate from the keras structure.
     """
     assert data is not None or data_path is not None, \
-        'provide either a dataset or a path'
+        'provide either a dataset or a path to the dataset'
     if data is None:
         data = np.load(data_path)
     if epochs is None:
         epochs = int(1e16)
-    if epoch_steps is None:
-        epoch_steps = data.size[1] - data.size[1] % sequence_length
     if batch_size != sequence_length:
         raise NotImplementedError('each sample is a position in the sequence')
+    _epoch_steps = epoch_steps
 
     def _next_token_batch_generator():
-        for e in range(epochs):
-            for i in range(0, epoch_steps - sequence_length - epoch_steps % sequence_length, batch_size):
-                x_batch = [list(data[i + pos:i + pos + sequence_length]) for pos in range(batch_size)]
-                x_batch = np.array(x_batch)
-                x_batch = [x_batch, ct.memory, ct.compressed_memory]
+        x_data, y_data, y_target_position_info = data
+        epoch_steps = _epoch_steps or min(x_data.size[0], y_data.size[0])
+        epoch_steps = epoch_steps - batch_size - epoch_steps % batch_size
 
-                y_batch = [data[i + pos + sequence_length] for pos in range(batch_size)]
-                y_batch = np.array(y_batch)
+        x_data = x_data[:epoch_steps]
+        y_data = y_data[:epoch_steps]
+
+        for e in range(epochs):
+            if shuffle:
+                raise NotImplementedError  # maintain same samples after shuffle
+
+            for i in range(0, epoch_steps, batch_size):
+                x_batch_input = x_data[i: i+batch_size]
+                target_position = y_target_position_info[i: i+batch_size]
+                y_batch = y_data[i: i+batch_size, target_position]
+
+                x_batch_output = y_batch.copy()
+                x_batch_output[:, target_position] = 0.
+
+                x_batch = [x_batch_input, x_batch_output]
                 y_batch = to_categorical(y_batch, num_classes=vocab_size)
 
                 yield x_batch, y_batch
-    return _next_token_batch_generator
+        return _next_token_batch_generator

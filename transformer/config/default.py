@@ -13,12 +13,13 @@ from omegaconf import OmegaConf
 class _Config:
     # ## Meta ### #
     dataset: str = 'pg-19'
-    version: int = 1
+    version: int = 0
     verbose: bool = True
     use_positional_encoding: bool = True
+    tqdm: Optional[str] = 'tqdm'  # [tqdm, tqdm-notebook]
 
     # ## Run ### #
-    tokenize: bool = False
+    tokenize: bool = True
     train: bool = True
 
     # ## Tokenize ### #
@@ -45,16 +46,16 @@ class _Config:
     save_interval: int = 5000
 
     # ### Paths ### #
-    input_dir: str = 'data/deepmind-gutenberg/input/train/'
+    input_dir: str = 'data/wma-en-de/input/v0/'
     input_paths: List[str] = field(default_factory=list)
-    tokenizer_output_path: str = f'data/deepmind-gutenberg/tokenizer/pg19-' \
+    tokenizer_output_path: str = f'data/wma-en-de/tokenizer/wma-en-de-' \
                                  f't{vocab_size}-' \
                                  f'v{version}.tok'
-    tokens_output_dir: str = f'data/deepmind-gutenberg/tokenized/v{version}'
-    processed_path: str = f'data/deepmind-gutenberg/processed/v{version}/train.pkl'
-    train_logs_output_path: str = f'training-logs/ct-pg19-v{version}.txt'
-    model_output_path: str = f'data/deepmind-gutenberg/model/' \
-                             f'test-ct-pg-19-' \
+    tokens_output_dir: str = f'data/wma-en-de/tokenized/v{version}'
+    processed_path: str = f'data/wma-en-de/processed/v{version}/train.pkl'
+    train_logs_output_path: str = f'data/wma-en-de/training-logs/transformer-wma-en-de-v{version}.txt'
+    model_output_path: str = f'data/wma-en-de/model/' \
+                             f'transformer-wma-en-de-' \
                              f'v{version}-' \
                              f'e{epochs}-' \
                              f'vs{vocab_size}-' \
