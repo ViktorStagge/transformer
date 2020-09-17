@@ -1,10 +1,14 @@
+import sys
+import logging
+
 from typing import Union, \
                    Iterable
 
+_loggers = {}
+
 
 def get_tqdm(method: Union[str, Iterable] = None,
-             **kwargs) \
-        -> Iterable:
+             **kwargs):
     """Retrieves the regular tqdm progress-bar or the tqdm-notebook progress-bar.
 
     Passing an already created tqdm progress-bar will return the same reference as is.
@@ -33,3 +37,36 @@ def get_tqdm(method: Union[str, Iterable] = None,
 def mock_tqdm(iterable=None, **kwargs):
     for value in iter(iterable):
         yield value
+
+
+def get_logger(name: str = None,
+               format: str = None,
+               datefmt: str = None):
+    global _loggers
+
+    if format is None:
+        format = '|%(asctime)s, %(name)s| %(message)s'
+    if datefmt is None:
+        datefmt = '%Y-%m-%d %H:%M'
+
+    if name not in _loggers:
+        logger = Logger(name=name)
+
+        formatter = logging.Formatter(format, datefmt=datefmt)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.DEBUG)
+        logger.addHandler(handler)
+        _loggers[name] = logger
+
+    return _loggers[name]
+
+
+class Logger(logging.Logger):
+    """Logger instance representing one logging channel.
+    Instance is callable, intended as a conveniency method
+    for the `Logger.info(..)` method.
+    """
+
+    def __call__(self, message, *args, **kwargs):
+        self.info(message, *args, **kwargs)

@@ -12,7 +12,8 @@ from keras.layers import Layer
 
 class ReverseEmbedding(Layer):
     def __init__(self,
-                 embedding_layer=None,
+                 batch_size,
+                 embedding_layer: layers.Embedding = None,
                  activation=None,
                  **kwargs):
         super().__init__(**kwargs)
@@ -20,6 +21,7 @@ class ReverseEmbedding(Layer):
         self.vocab_size = embedding_layer.get_config()['input_dim']
         self.activation = activations.get(activation)
         self.trainable = False
+        self.batch_size = batch_size
 
     def build(self, input_shape):
         super().build(input_shape)
@@ -38,6 +40,19 @@ class ReverseEmbedding(Layer):
         if self.activation is not None:
             y = self.activation(y)
         return y
+
+    def compute_mask(self, inputs, mask=None):
+        if mask is None:
+            return mask
+        import tensorflow as tf
+
+        new_mask = tf.constant(np.ones(shape=(self.batch_size,)))
+        # Unclear behaviour from `keras`.
+        # keras output mask during categorical_crossentropy
+        # does not use a second dimension for its mask.
+        # I.e. the mask shape and output shape *does not match*.
+        # In this case, second dimension ought to be `self.embedding_layer.input_dim`
+        return new_mask
 
     def compute_output_shape(self, input_shape):
         return input_shape[0], self.embedding_layer.input_dim
@@ -79,14 +94,24 @@ class PositionalEncoding(Layer):
 
         super().build(input_shape)
 
-    def call(self, inputs, **kwargs):
+    def call(self,
+             inputs,
+             mask=None,
+             **kwargs):
         y = self.encodings * self.W_kr
+
+        if mask is not None:
+            next_mask = K.cast(self.compute_mask(inputs, mask), 'float32')
+
+            y = y * next_mask
 
         if self.verbose:
             print(f'{self.__class__.__name__} call:')
             print(f'  encodings: {self.encodings.shape}')
             print(f'  W_kr:      {self.W_kr.shape}')
             print(f'  inputs:    {inputs.shape}')
+            print(f'  mask:      {mask.shape}')
+            print(f'  next_mask:      {next_mask.shape}')
             # print(f'  z:         {z.shape}')
             print(f'  y:         {y.shape}')
 
@@ -111,6 +136,10 @@ class PositionalEncoding(Layer):
         encoding = encoding.reshape((self.sequence_length, self.d_model))
         encoding = np.tile(encoding, (self.batch_size, 1, 1))
         return encoding
+
+    def compute_mask(self, inputs, mask=None):
+        next_mask = K.tile(K.expand_dims(mask, -1), [1, 1, self.d_model])
+        return next_mask
 
     def get_config(self):
         config = super().get_config()

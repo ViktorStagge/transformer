@@ -10,6 +10,8 @@ from typing import Dict, \
 from omegaconf import OmegaConf
 from tokenizers import ByteLevelBPETokenizer
 
+from transformer.utils.utils import get_tqdm
+
 
 separator_samples = '############<new_sample>############'
 
@@ -100,14 +102,14 @@ class Tokenizer(ByteLevelBPETokenizer):
             'must specify either input_paths or input_dir to use for tokenization.'
         if input_dir and input_paths is None:
             input_paths = [os.path.join(input_dir, filename) for filename in os.listdir(input_dir)]
-        if tqdm is None:
-            tqdm = iter
+        tqdm = get_tqdm(tqdm)
 
         encodings = []
-        for path in tqdm(input_paths):
+        for path in tqdm(input_paths, desc='tokenize files'):
             with open(path) as file:
-                text = file.read()  # TODO: file.read_lines() -> <end-of-sample-token> -> self.encode_batch(...)
-            encoding = self.encode(text)
+                # text = file.read()  # TODO: file.read_lines() -> <end-of-sample-token> -> self.encode_batch(...)
+                lines = file.readlines()
+            encoding = self.encode_batch(lines)
 
             if tokens_output_dir is not None:
                 os.makedirs(tokens_output_dir, exist_ok=True)
@@ -118,7 +120,8 @@ class Tokenizer(ByteLevelBPETokenizer):
                     filename += '.pkl'
 
                 with open(os.path.join(tokens_output_dir, filename), 'wb') as file:
-                    pickle.dump(encoding.ids, file)
+                    _encoding = [e.ids for e in encoding]
+                    pickle.dump(_encoding, file)
             if return_encodings:
                 encodings.append(encoding)
 

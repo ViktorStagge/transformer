@@ -11,7 +11,7 @@ install:
 	@pip install -r requirements.txt
 
 train:
-	python transformer.py train
+	@python transformer.py train
 
 evaluate:
 	@echo "Not implemented"

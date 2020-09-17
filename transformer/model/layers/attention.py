@@ -116,6 +116,17 @@ class ScaledDotProductAttention(Layer):
 
         return y
 
+    def compute_mask(self, inputs, mask=None):
+        if isinstance(mask, list):
+            mask = mask[0]
+        return mask
+        # if mask is None:
+        #     return mask
+        #
+        # if len(mask.shape) == 2:
+        #     mask = K.tile(K.expand_dims(mask, -1), [1, 1, self.d_model])
+        # return mask
+
     def compute_output_shape(self, input_shape):
         if self.verbose:
             print('#### COMPUTE OUTPUT SHAPE ####')
@@ -202,11 +213,22 @@ class MultiHeadAttention(Layer):
 
         return y
 
+    def compute_mask(self, inputs, mask=None):
+        if isinstance(mask, list):
+            mask = mask[0]
+        return mask
+        # if mask is None:
+        #     return mask
+        #
+        # if len(mask.shape) == 2:
+        #     mask = K.tile(K.expand_dims(mask, -1), [1, 1, self.d_model])
+        # return mask
+
     def compute_output_shape(self, input_shape):
         assert isinstance(input_shape, list)
         head_shape = input_shape[-1]
-        assert len(head_shape) == 3
-        assert head_shape[1] == self.sequence_length
+        assert len(head_shape) == 3, f'received: {head_shape}'
+        assert head_shape[1] == self.sequence_length, f'received: {head_shape}. {head_shape[1]} & {self.sequence_length}'
         assert head_shape[2] == self.d_v
 
         return None, self.sequence_length, self.d_model

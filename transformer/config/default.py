@@ -11,23 +11,28 @@ from omegaconf import OmegaConf
 
 @dataclass
 class _Config:
-    # ## Meta ### #
+    # ### Meta ### #
     dataset: str = 'pg-19'
     version: int = 0
     verbose: bool = True
-    use_positional_encoding: bool = True
+    use_positional_encoding: bool = False
+    use_mask: bool = True
     tqdm: Optional[str] = 'tqdm'  # [tqdm, tqdm-notebook]
 
-    # ## Run ### #
-    tokenize: bool = True
+    # ### Run ### #
+    tokenize: bool = False
+    create_dataset: bool = False
     train: bool = True
 
-    # ## Tokenize ### #
-    save_tokens: bool = True
+    # ### Preprocess: Tokenize ### #
     load_tokens: bool = True
     lowercase: bool = False
     vocab_size: int = 16384
-    max_tokens_files: Optional[int] = None
+    max_samples: Optional[int] = 100000
+    sample_length: int = 100
+
+    # ### Preprocess: Create [training] Dataset ### #
+    save_training_dataset: bool = True
 
     # ### Training ### #
     continue_training: bool = True
@@ -35,12 +40,15 @@ class _Config:
     validation_steps: int = 100000
 
     epochs: int = 5
-    batch_size: int = 128
-    d_layers: int = 2
+    batch_size: int = 100
+    d_layers: int = 1
     d_heads: int = 2
-    sequence_length: int = 128
+    sequence_length: int = sample_length
     memory_size: int = 256
-    d_k: int = 16
+    d_model: int = 128
+    d_k: int = d_model // d_heads
+    d_v: int = d_model // d_heads
+    d_mlp_hidden: int = 128
     output_size: int = vocab_size
     steps_per_epoch: int = train_steps//sequence_length - 1
     save_interval: int = 5000
