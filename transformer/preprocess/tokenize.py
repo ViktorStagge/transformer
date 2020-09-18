@@ -10,7 +10,7 @@ from typing import Dict, \
 from omegaconf import OmegaConf
 from tokenizers import ByteLevelBPETokenizer
 
-from transformer.utils.utils import get_tqdm
+from transformer.utils import get_tqdm
 
 
 separator_samples = '############<new_sample>############'

@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 @dataclass
 class _Config:
     # ### Meta ### #
-    dataset: str = 'pg-19'
+    dataset: str = 'wma-en-de'
     version: int = 0
     verbose: bool = True
     use_positional_encoding: bool = False
@@ -28,14 +28,16 @@ class _Config:
     load_tokens: bool = True
     lowercase: bool = False
     vocab_size: int = 16384
-    max_samples: Optional[int] = 100000
     sample_length: int = 100
 
     # ### Preprocess: Create [training] Dataset ### #
+    max_samples: Optional[int] = 1000000
     save_training_dataset: bool = True
+    save_interval: int = 10000  # maximum samples per file
+    compression: str = 'zipfile'  # ['pickle', 'gzip', 'bz2', 'lzma', 'zipfile', 'lz4']
 
     # ### Training ### #
-    continue_training: bool = True
+    retrain: bool = True
     train_steps: int = 12000000
     validation_steps: int = 100000
 
@@ -52,6 +54,7 @@ class _Config:
     output_size: int = vocab_size
     steps_per_epoch: int = train_steps//sequence_length - 1
     save_interval: int = 5000
+    save_interval: int = save_interval - save_interval % batch_size
 
     # ### Paths ### #
     input_dir: str = 'data/wma-en-de/input/v0/'
@@ -60,7 +63,7 @@ class _Config:
                                  f't{vocab_size}-' \
                                  f'v{version}.tok'
     tokens_output_dir: str = f'data/wma-en-de/tokenized/v{version}'
-    processed_path: str = f'data/wma-en-de/processed/v{version}/train.pkl'
+    processed_dir: str = f'data/wma-en-de/processed/v{version}/'
     train_logs_output_path: str = f'data/wma-en-de/training-logs/transformer-wma-en-de-v{version}.txt'
     model_output_path: str = f'data/wma-en-de/model/' \
                              f'transformer-wma-en-de-' \

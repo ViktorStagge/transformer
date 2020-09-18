@@ -2,13 +2,14 @@ import sys
 import logging
 
 from typing import Union, \
-                   Iterable
+                   Iterable, \
+                   Callable
 
 _loggers = {}
 
 
 def get_tqdm(method: Union[str, Iterable] = None,
-             **kwargs):
+             **kwargs) -> Callable:
     """Retrieves the regular tqdm progress-bar or the tqdm-notebook progress-bar.
 
     Passing an already created tqdm progress-bar will return the same reference as is.
