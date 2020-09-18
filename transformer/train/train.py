@@ -49,13 +49,15 @@ def train(config_path: str = 'default',
                                tqdm=tqdm)
 
     if config.create_dataset and config.load_tokens:
-        logger('> loading tokens (1/2)')
+        logger('> loading tokens')
         english_tokens_path = os.path.join(config.tokens_output_dir, 'train-en-ascii.pkl')
         german_tokens_path = os.path.join(config.tokens_output_dir, 'train-de-ascii.pkl')
 
+        logger('> loading tokens (1/2)')
         with open(english_tokens_path, 'rb') as file:
             english_tokens = pickle.load(file)
         logger(f'>>> length of tokens: {len(english_tokens)}')
+
         logger('> loading tokens (2/2)')
         with open(german_tokens_path, 'rb') as file:
             german_tokens = pickle.load(file)
@@ -98,13 +100,13 @@ def train(config_path: str = 'default',
     if config.verbose:
         model.summary(print_fn=logger)
 
-    logger('> creating batch generator')
+    logger('>>> creating batch generator')
     generator = NextTokenBatchGenerator(data_dir=config.processed_dir,
                                         epoch_steps=config.train_steps,
                                         batch_size=config.batch_size,
                                         vocab_size=config.vocab_size)
 
-    logger('> creating callbacks')
+    logger('>>> creating callbacks')
     callbacks = [WriteLogsToFile(filepath=config.train_logs_output_path, overwrite_old_file=False),
                  SaveModel(filepath=config.model_output_path,
                            save_every_n_batches=config.save_interval_training)]
