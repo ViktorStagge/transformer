@@ -1,5 +1,6 @@
 import warnings
 
+from typing import Optional
 from keras.layers import Input, \
                          Add, \
                          Dropout, \
@@ -16,17 +17,17 @@ class Decoder(Model):
     """
 
     def __init__(self,
-                 sequence_length,
-                 d_layers=1,
-                 d_heads=2,
-                 d_model=128,
-                 d_k=16,
-                 d_v=128,
-                 d_mlp_hidden=1024,
-                 dropout_embedding=0.1,
-                 dropout_mlp=0.1,
-                 batch_size=None,
-                 name='Decoder',
+                 sequence_length: int,
+                 d_layers: int = 1,
+                 d_heads: int = 2,
+                 d_model: int = 128,
+                 d_k: int = 16,
+                 d_v: int = 128,
+                 d_mlp_hidden: int = 1024,
+                 dropout_embedding: float = 0.1,
+                 dropout_mlp: float = 0.1,
+                 batch_size: Optional[int] = None,
+                 name: str = 'Decoder',
                  **kwargs):
         batch_size = batch_size or sequence_length
         if batch_size != sequence_length:

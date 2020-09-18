@@ -1,3 +1,4 @@
+from typing import Optional
 from keras.layers import Input, \
                          Embedding, \
                          Add, \
@@ -10,14 +11,14 @@ from transformer.model.layers import PositionalEncoding
 class Embedder(Model):
 
     def __init__(self,
-                 sequence_length,
-                 vocab_size=16384,
-                 d_model=128,
-                 dropout=0.1,
-                 batch_size=None,
-                 name='Embedder',
-                 use_positional_encoding=True,
-                 use_mask=True,
+                 sequence_length: int,
+                 vocab_size: int = 16384,
+                 d_model: int = 128,
+                 dropout: float = 0.1,
+                 batch_size: Optional[int] = None,
+                 name: str = 'Embedder',
+                 use_positional_encoding: bool = True,
+                 use_mask: bool = True,
                  **kwargs):
         x = Input(shape=(sequence_length,),
                   name='x')

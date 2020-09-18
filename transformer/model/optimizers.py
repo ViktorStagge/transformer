@@ -1,3 +1,4 @@
+from typing import Union
 from keras import optimizers
 from omegaconf import OmegaConf
 from dataclasses import dataclass
@@ -11,7 +12,8 @@ class Adam:
     clipnorm: float = 0.1
 
 
-def get_optimizer(method, **kwargs):
+def get_optimizer(method: Union[str, optimizers.Optimizer],
+                  **kwargs):
     """Retrieves the specified optimizer.
 
     Defaults to `Adam` with the parameters as specified by Rae et. al for their Compressive Transformer.

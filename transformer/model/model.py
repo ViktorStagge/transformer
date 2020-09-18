@@ -2,7 +2,10 @@ import warnings
 import numpy as np
 
 from typing import List, \
-                   Dict
+                   Dict, \
+                   Optional, \
+                   Union, \
+                   Any
 from keras import backend as K
 from keras.layers import Embedding, \
                          Dense, \
@@ -30,20 +33,20 @@ class Transformer(Model):
     """Transformer as described in "Attention is All You Need" by Vaswani et. al.
     """
     def __init__(self,
-                 sequence_length,
-                 vocab_size=16384,
-                 d_layers=1,
-                 d_heads=2,
-                 d_model=128,
-                 d_k=16,
-                 d_v=128,
-                 d_mlp_hidden=1024,
-                 dropout_embedding=0.1,
-                 dropout_mlp=0.1,
-                 batch_size=None,
-                 name='Transformer',
-                 use_mask=True,
-                 use_positional_encoding=True,
+                 sequence_length: int,
+                 vocab_size: int = 16384,
+                 d_layers: int = 1,
+                 d_heads: int = 2,
+                 d_model: int = 128,
+                 d_k: int = 16,
+                 d_v: int = 128,
+                 d_mlp_hidden: int = 1024,
+                 dropout_embedding: float = 0.1,
+                 dropout_mlp: float = 0.1,
+                 batch_size: Optional[int] = None,
+                 name: str = 'Transformer',
+                 use_mask: bool = True,
+                 use_positional_encoding: bool = True,
                  **kwargs):
         if batch_size != sequence_length:
             warnings.warn('batch_size and sequence_length have to be of the same size to '
@@ -168,7 +171,9 @@ class Transformer(Model):
         return config
 
     @classmethod
-    def from_config(cls, config, custom_objects=None):
+    def from_config(cls,
+                    config: Dict[str, Any],
+                    custom_objects: Dict[str, Any] = None):
         """Builds a Transformer model from a config.
         """
         assert 'attributes' in config, \
@@ -179,9 +184,9 @@ class Transformer(Model):
         return model
 
     @staticmethod
-    def load(filepath,
-             custom_objects=None,
-             compile=True):
+    def load(filepath: str,
+             custom_objects: Dict[str, Any] = None,
+             compile: bool = True):
         """Load the Transformer from file.
 
         Arguments:
