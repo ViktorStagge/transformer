@@ -107,7 +107,7 @@ def train(config_path: str = 'default',
     logger('> creating callbacks')
     callbacks = [WriteLogsToFile(filepath=config.train_logs_output_path, overwrite_old_file=False),
                  SaveModel(filepath=config.model_output_path,
-                           save_every_n_batches=config.save_interval)]
+                           save_every_n_batches=config.save_interval_training)]
 
     logger('> starting training of model')
     model.fit_generator(generator(),
