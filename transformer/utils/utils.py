@@ -36,13 +36,36 @@ def get_tqdm(method: Union[str, Iterable] = None,
 
 
 def mock_tqdm(iterable=None, **kwargs):
+    """Mocked version of tqdm. Returns an iterable and discards any key-word arguments.
+    """
     for value in iter(iterable):
         yield value
 
 
+class Logger(logging.Logger):
+    """Logger instance representing one logging channel.
+    Instance is callable, intended as a conveniency method
+    for the `Logger.info(..)` method.
+    """
+
+    def __call__(self, message, *args, **kwargs):
+        self.info(message, *args, **kwargs)
+
+
 def get_logger(name: str = None,
                format: str = None,
-               datefmt: str = None):
+               datefmt: str = None) -> Logger:
+    """Returns a Logger instance which is configured upon creation.
+    Retrieving the same `name` multiple times returns the same Logger instance.
+
+    Arguments:
+        name: unique name of logger
+        format: format for logging messages (eg. printing one line)
+        datefmt: date format
+
+    Returns:
+        logger: configured Logger instance
+    """
     global _loggers
 
     if format is None:
@@ -61,13 +84,3 @@ def get_logger(name: str = None,
         _loggers[name] = logger
 
     return _loggers[name]
-
-
-class Logger(logging.Logger):
-    """Logger instance representing one logging channel.
-    Instance is callable, intended as a conveniency method
-    for the `Logger.info(..)` method.
-    """
-
-    def __call__(self, message, *args, **kwargs):
-        self.info(message, *args, **kwargs)
