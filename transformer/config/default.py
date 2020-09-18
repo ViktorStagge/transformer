@@ -53,7 +53,8 @@ class _Config:
     d_mlp_hidden: int = 128
     output_size: int = vocab_size
     steps_per_epoch: int = train_steps//sequence_length - 1
-    save_interval: int = 5000
+    save_interval_training: int = 5000
+
     save_interval: int = save_interval - save_interval % batch_size
 
     # ### Paths ### #

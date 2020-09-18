@@ -2,8 +2,8 @@ import numpy as np
 import itertools
 
 from typing import Tuple, \
-    Union, \
-    List
+                   Union, \
+                   List
 from keras import layers
 from keras import activations
 from keras import backend as K
@@ -112,7 +112,6 @@ class PositionalEncoding(Layer):
             print(f'  inputs:    {inputs.shape}')
             print(f'  mask:      {mask.shape}')
             print(f'  next_mask:      {next_mask.shape}')
-            # print(f'  z:         {z.shape}')
             print(f'  y:         {y.shape}')
 
         assert len(inputs.shape) == len(y.shape), \
@@ -130,7 +129,7 @@ class PositionalEncoding(Layer):
         return input_shape
 
     def create_positional_encodings(self):
-        encoding = [PE(pos, l, self.d_model) for pos, l in itertools.product(range(self.sequence_length),
+        encoding = [PE(pos, i, self.d_model) for pos, i in itertools.product(range(self.sequence_length),
                                                                              range(self.d_model))]
         encoding = np.array(encoding)
         encoding = encoding.reshape((self.sequence_length, self.d_model))
@@ -148,17 +147,16 @@ class PositionalEncoding(Layer):
         return config
 
 
-def PE(pos, l, max_dimension):
+def PE(pos, i, max_dimension):
     """Positional Encoding
 
     Arguments:
         pos: position in the sequence
-        l: dimension, referred to in the paper as "i".
-            Changed due to duplicated variable name
+        i: dimension, referred to in the paper as "i"
         max_dimension: maximum amount of dimensions used
     """
-    alpha = pos/10000**(2*l/max_dimension)
+    alpha = pos/10000**(2 * i / max_dimension)
 
-    if l % 2 == 0:
+    if i % 2 == 0:
         return np.sin(alpha)
     return np.cos(alpha)
