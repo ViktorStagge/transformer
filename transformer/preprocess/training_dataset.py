@@ -24,9 +24,11 @@ def create_training_dataset(english_tokens,
     for sample_index, e_sample, d_sample in zip(tqdm(range(max_samples), desc='create_training_data'),
                                                 english_tokens,
                                                 german_tokens):
-        e_sample_entries = _preprocess_create_training_data_samples(e_sample, sample_length=sample_length)
-        d_sample_entries = _preprocess_create_training_data_samples(d_sample, sample_length=sample_length)
-        y_sample_target_position = np.arange(0, sample_length)
+        tokens_in_sample = min(len(e_sample), len(d_sample), sample_length)
+
+        e_sample_entries = _preprocess_create_training_data_samples(e_sample, sample_length, tokens_in_sample)
+        d_sample_entries = _preprocess_create_training_data_samples(d_sample, sample_length, tokens_in_sample)
+        y_sample_target_position = np.arange(0, tokens_in_sample)
 
         x.append(e_sample_entries)
         y.append(d_sample_entries)
@@ -38,6 +40,8 @@ def create_training_dataset(english_tokens,
             x = np.concatenate(x)
             y = np.concatenate(y)
             y_target_position_info = np.concatenate(y_target_position_info)
+            assert len(x) == len(y) == len(y_target_position_info), \
+                f'unexpected data mismatch for x={len(x)}, y={len(y)}, y_target={len(y_target_position_info)}'
 
             dataset = (x, y, y_target_position_info)
             compress_pickle.dump(dataset,
@@ -54,15 +58,19 @@ def create_training_dataset(english_tokens,
     y = np.concatenate(y)
     y_target_position_info = np.concatenate(y_target_position_info)
 
+    assert len(x) == len(y) == len(y_target_position_info), \
+        f'unexpected data mismatch for x={len(x)}, y={len(y)}, y_target={len(y_target_position_info)}'
+
     return x, y, y_target_position_info
 
 
 def _preprocess_create_training_data_samples(sample,
-                                             sample_length):
+                                             sample_length,
+                                             tokens_in_sample):
     if sample_length < len(sample):
         sample = sample[:sample_length]
 
-    sample_entries = np.tile(sample, reps=(len(sample), 1))
+    sample_entries = np.tile(sample, reps=(tokens_in_sample, 1))
     sample_entries = np.tril(sample_entries)
 
     padding_length = sample_length - len(sample)

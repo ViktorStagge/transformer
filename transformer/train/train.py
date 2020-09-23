@@ -1,18 +1,13 @@
 import os
-import gzip
 import pickle
-import compress_pickle
-import logging
-import numpy as np
 
-from sometimer import timer, time_this_method
 from typing import Optional, Iterable
 
 from transformer.config import get_config
 from transformer.preprocess import Tokenizer
 from transformer.preprocess import create_training_dataset
 from transformer.model import Transformer
-from transformer.utils.generators import NextTokenBatchGenerator
+from transformer.train.generators import NextTokenBatchGenerator
 from transformer.train.callbacks import WriteLogsToFile, \
                                         SaveModel
 from transformer.utils import get_tqdm
@@ -62,6 +57,9 @@ def train(config_path: str = 'default',
         with open(german_tokens_path, 'rb') as file:
             german_tokens = pickle.load(file)
         logger(f'>>> length of tokens: {len(german_tokens)}')
+
+        logger(f'{german_tokens[:15]}')
+        logger(f'{english_tokens[:15]}')
 
     if config.create_dataset:
         logger('> creating dataset for training')

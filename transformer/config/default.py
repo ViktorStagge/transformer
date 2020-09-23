@@ -13,11 +13,11 @@ from omegaconf import OmegaConf
 class _Config:
     # ### Meta ### #
     dataset: str = 'wma-en-de'
-    version: int = 0
+    version: int = 1
     verbose: bool = True
     use_positional_encoding: bool = False
     use_mask: bool = True
-    tqdm: Optional[str] = 'tqdm'  # [tqdm, tqdm-notebook]
+    tqdm: Optional[str] = 'tqdm'  # [tqdm, tqdm-notebook, None]
 
     # ### Run ### #
     tokenize: bool = False
@@ -41,12 +41,11 @@ class _Config:
     train_steps: int = 12000000
     validation_steps: int = 100000
 
-    epochs: int = 5
-    batch_size: int = 100
+    epochs: int = 500
+    batch_size: int = 1024
     d_layers: int = 1
     d_heads: int = 2
     sequence_length: int = sample_length
-    memory_size: int = 256
     d_model: int = 128
     d_k: int = d_model // d_heads
     d_v: int = d_model // d_heads

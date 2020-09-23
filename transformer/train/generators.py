@@ -43,6 +43,7 @@ class NextTokenBatchGenerator:
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.steps_per_epoch = epoch_steps // batch_size
+        self.tqdm = tqdm
 
     def __call__(self):
         def _next_token_batch_generator():
