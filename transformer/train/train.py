@@ -9,11 +9,13 @@ from transformer.preprocess import create_training_dataset
 from transformer.model import Transformer
 from transformer.train.generators import NextTokenBatchGenerator
 from transformer.train.callbacks import WriteLogsToFile, \
-                                        SaveModel
+                                        SaveModel, \
+                                        AlterLearningRate, \
+                                        PrintExamples
 from transformer.utils import get_tqdm
 from transformer.utils import get_logger
 
-logger = get_logger('TRAINING')
+logger = get_logger('transformer>train.py')
 
 
 def train(config_path: str = 'default',
@@ -29,6 +31,7 @@ def train(config_path: str = 'default',
     logger('Start Training.')
     config = get_config(config_path)
     tqdm = get_tqdm(tqdm or config.get('tqdm'))
+    logger.setLevel(config.logging_level)
 
     # ### Setup ### #
     if config.tokenize:
@@ -45,8 +48,8 @@ def train(config_path: str = 'default',
 
     if config.create_dataset and config.load_tokens:
         logger('> loading tokens')
-        english_tokens_path = os.path.join(config.tokens_output_dir, 'train-en-ascii.pkl')
-        german_tokens_path = os.path.join(config.tokens_output_dir, 'train-de-ascii.pkl')
+        english_tokens_path = os.path.join(config.tokens_output_dir, 'train-en.pkl')
+        german_tokens_path = os.path.join(config.tokens_output_dir, 'train-de.pkl')
 
         logger('> loading tokens (1/2)')
         with open(english_tokens_path, 'rb') as file:
@@ -58,8 +61,8 @@ def train(config_path: str = 'default',
             german_tokens = pickle.load(file)
         logger(f'>>> length of tokens: {len(german_tokens)}')
 
-        logger(f'{german_tokens[:15]}')
-        logger(f'{english_tokens[:15]}')
+        logger(f'{german_tokens[:3]}')
+        logger(f'{english_tokens[:3]}')
 
     if config.create_dataset:
         logger('> creating dataset for training')
@@ -68,7 +71,7 @@ def train(config_path: str = 'default',
                                 max_samples=config.max_samples,
                                 sample_length=config.sample_length,
                                 save_dataset=config.save_training_dataset,
-                                save_interval=config.save_interval,
+                                save_interval=200,  # config.save_interval,
                                 save_dir=config.processed_dir,
                                 save_compression=config.compression,
                                 tqdm=tqdm)
@@ -102,12 +105,16 @@ def train(config_path: str = 'default',
     generator = NextTokenBatchGenerator(data_dir=config.processed_dir,
                                         epoch_steps=config.train_steps,
                                         batch_size=config.batch_size,
-                                        vocab_size=config.vocab_size)
+                                        vocab_size=config.vocab_size,
+                                        sample_length=config.sample_length)
 
     logger('>>> creating callbacks')
     callbacks = [WriteLogsToFile(filepath=config.train_logs_output_path, overwrite_old_file=False),
                  SaveModel(filepath=config.model_output_path,
-                           save_every_n_batches=config.save_interval_training)]
+                           save_every_n_batches=config.save_interval_training),
+                 # AlterLearningRate(learning_rates=config.learning_rates)
+                 PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger)
+                 ]
 
     logger('> starting training of model')
     model.fit_generator(generator(),
