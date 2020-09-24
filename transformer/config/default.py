@@ -13,11 +13,12 @@ from omegaconf import OmegaConf
 class _Config:
     # ### Meta ### #
     dataset: str = 'wma-en-de'
-    version: int = 1
+    version: int = 2
     verbose: bool = True
     use_positional_encoding: bool = False
     use_mask: bool = True
     tqdm: Optional[str] = 'tqdm'  # [tqdm, tqdm-notebook, None]
+    logging_level: str = 'info'  # [info, debug, critical]
 
     # ### Run ### #
     tokenize: bool = False
@@ -33,16 +34,17 @@ class _Config:
     # ### Preprocess: Create [training] Dataset ### #
     max_samples: Optional[int] = 1000000
     save_training_dataset: bool = True
-    save_interval: int = 10000  # maximum samples per file
+    save_interval: int = 200  # maximum samples per file
     compression: str = 'zipfile'  # ['pickle', 'gzip', 'bz2', 'lzma', 'zipfile', 'lz4']
 
     # ### Training ### #
     retrain: bool = True
     train_steps: int = 12000000
     validation_steps: int = 100000
+    learning_rates: Dict[str, int] = field(default_factory=dict)
 
     epochs: int = 500
-    batch_size: int = 1024
+    batch_size: int = 1024  # tokens
     d_layers: int = 1
     d_heads: int = 2
     sequence_length: int = sample_length
@@ -54,10 +56,8 @@ class _Config:
     steps_per_epoch: int = train_steps//sequence_length - 1
     save_interval_training: int = 5000
 
-    save_interval: int = save_interval - save_interval % batch_size
-
     # ### Paths ### #
-    input_dir: str = 'data/wma-en-de/input/v0/'
+    input_dir: str = 'data/wma-en-de/input/v1/'
     input_paths: List[str] = field(default_factory=list)
     tokenizer_output_path: str = f'data/wma-en-de/tokenizer/wma-en-de-' \
                                  f't{vocab_size}-' \
@@ -78,5 +78,11 @@ class _Config:
 
 config = OmegaConf.structured(_Config)
 
+# Additional Nested Fields
+config.learning_rates = {'0': 0.001,
+                         '10': 0.001}
+
+# Some interpolated fields
+config.logging_level = config.logging_level.upper()
 if os.path.exists(config.input_dir):
     config.input_paths = [os.path.join(config.input_dir, filename) for filename in os.listdir(config.input_dir)]
