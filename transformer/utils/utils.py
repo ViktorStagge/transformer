@@ -49,6 +49,7 @@ class Logger(logging.Logger):
     """
 
     def __call__(self, message, *args, **kwargs):
+        message = str(message)
         self.info(message, *args, **kwargs)
 
 
@@ -69,7 +70,7 @@ def get_logger(name: str = None,
     global _loggers
 
     if format is None:
-        format = '|%(asctime)s, %(name)s| %(message)s'
+        format = '|%(asctime)s, %(name)s | %(message)s'
     if datefmt is None:
         datefmt = '%Y-%m-%d %H:%M'
 
@@ -79,7 +80,7 @@ def get_logger(name: str = None,
         formatter = logging.Formatter(format, datefmt=datefmt)
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(formatter)
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(logging.INFO)
         logger.addHandler(handler)
         _loggers[name] = logger
 
