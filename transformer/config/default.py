@@ -44,7 +44,7 @@ class _Config:
     learning_rates: Dict[str, int] = field(default_factory=dict)
 
     epochs: int = 500
-    batch_size: int = 1024  # tokens
+    batch_size: int = 2048  # tokens
     d_layers: int = 1
     d_heads: int = 2
     sequence_length: int = sample_length

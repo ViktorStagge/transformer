@@ -45,6 +45,8 @@ def train(config_path: str = 'default',
                                tokens_output_dir=config.tokens_output_dir,
                                return_encodings=False,
                                tqdm=tqdm)
+    else:
+        tokenizer = Tokenizer.load(path=config.tokenizer_output_path)
 
     if config.create_dataset and config.load_tokens:
         logger('> loading tokens')
