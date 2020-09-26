@@ -115,7 +115,7 @@ def train(config_path: str = 'default',
                  SaveModel(filepath=config.model_output_path,
                            save_every_n_batches=config.save_interval_training),
                  # AlterLearningRate(learning_rates=config.learning_rates)
-                 PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger)
+                 # PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger)
                  ]
 
     logger('> starting training of model')

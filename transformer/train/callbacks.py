@@ -104,13 +104,24 @@ class PrintExamples(Callback):
         self.generator = generator
         self.tokenizer = tokenizer
 
-        self.x_test, self.y_test = next(generator())
+        self.x, self.y = next(generator())
+        self.x_text = tokenizer.decode(list(np.argmax(self.x, axis=1).astype('int')))
+        self.y_text = tokenizer.decode(list(np.argmax(self.y, axis=1).astype('int')))
 
     def on_epoch_end(self, epoch, logs=None):
-        y_pred_tokens = self.model.predict(self.x_test)
-        y_pred_words = self.tokenizer.decode_batch(y_pred_tokens)
+        y_pred_tokens = self.model.predict(self.x)
+        y_pred_tokens = np.argmax(y_pred_tokens, axis=1)
+        y_pred_tokens = y_pred_tokens.astype('int')
+        y_pred_tokens = list(y_pred_tokens)
 
-        for en_sample, de_pred, de_sample in zip(self.x_test, y_pred_words, self.y_test):
-            self.print_fn(f'english-actual-input: {en_sample}')
-            self.print_fn(f'german - pred -output: {de_pred}')
-            self.print_fn(f'german -actual-output: {de_sample}')
+        try:
+            # thread '<unnamed>' panicked at 'assertion failed: !b.shape.is_null()',
+            # /github/home/.cargo/registry/src/github.com-[...]
+            y_pred_words = self.tokenizer.decode(y_pred_tokens)
+
+            for en_sample, de_pred, de_sample in zip(self.x_text, y_pred_words, self.y_text):
+                self.print_fn(f'english-actual-input: {en_sample}')
+                self.print_fn(f'german - pred -output: {de_pred}')
+                self.print_fn(f'german -actual-output: {de_sample}')
+        except Exception as e:
+            self.print_fn(f'failed to create samples for epoch {epoch}')
