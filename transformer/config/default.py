@@ -22,7 +22,7 @@ class _Config:
 
     # ### Run ### #
     tokenize: bool = False
-    create_dataset: bool = False
+    create_dataset: bool = True
     train: bool = True
 
     # ### Preprocess: Tokenize ### #

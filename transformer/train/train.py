@@ -5,6 +5,7 @@ from typing import Optional, Iterable
 
 from transformer.config import get_config
 from transformer.preprocess import Tokenizer
+from transformer.preprocess import load_tokens
 from transformer.preprocess import create_training_dataset
 from transformer.model import Transformer
 from transformer.train.generators import NextTokenBatchGenerator
@@ -54,17 +55,15 @@ def train(config_path: str = 'default',
         german_tokens_path = os.path.join(config.tokens_output_dir, 'train-de.pkl')
 
         logger('> loading tokens (1/2)')
-        with open(english_tokens_path, 'rb') as file:
-            english_tokens = pickle.load(file)
+        english_tokens = load_tokens(path=english_tokens_path)
         logger(f'>>> length of tokens: {len(english_tokens)}')
 
         logger('> loading tokens (2/2)')
-        with open(german_tokens_path, 'rb') as file:
-            german_tokens = pickle.load(file)
+        german_tokens = load_tokens(path=german_tokens_path)
         logger(f'>>> length of tokens: {len(german_tokens)}')
 
-        logger(f'{german_tokens[:3]}')
-        logger(f'{english_tokens[:3]}')
+        logger.debug(f'GERMAN TOKENS:  {german_tokens[:3]}')
+        logger.debug(f'ENGLISH TOKENS: {english_tokens[:3]}')
 
     if config.create_dataset:
         logger('> creating dataset for training')
@@ -73,7 +72,7 @@ def train(config_path: str = 'default',
                                 max_samples=config.max_samples,
                                 sample_length=config.sample_length,
                                 save_dataset=config.save_training_dataset,
-                                save_interval=200,  # config.save_interval,
+                                save_interval=config.save_interval,
                                 save_dir=config.processed_dir,
                                 save_compression=config.compression,
                                 tqdm=tqdm)
@@ -115,7 +114,7 @@ def train(config_path: str = 'default',
                  SaveModel(filepath=config.model_output_path,
                            save_every_n_batches=config.save_interval_training),
                  # AlterLearningRate(learning_rates=config.learning_rates)
-                 # PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger)
+                 PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger)
                  ]
 
     logger('> starting training of model')

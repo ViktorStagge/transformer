@@ -34,12 +34,16 @@ def create_training_dataset(english_tokens,
             logger.debug(f'creating dataset: i={i}, max_samples={max_samples}, step={save_interval}')
             assert isinstance(english_tokens, list), \
                 f'unexpected format received: received={type(english_tokens)}, expected=<list>'
+            assert len(english_tokens) == len(german_tokens), \
+                f'unexpected lengths. Received en={len(english_tokens)}, de={len(german_tokens)}'
 
             en = english_tokens[i: i+save_interval]
-            en = [row[:sample_length] for row in en]
-
             de = german_tokens[i: i+save_interval]
-            de = [row[:sample_length] for row in de]
+
+            for j in range(min(len(en), len(de))):
+                row_sample_length = min(len(en[j]), len(de[j]), sample_length)
+                en[j] = en[j][:row_sample_length]  # Truncating to same length as a first solution
+                de[j] = de[j][:row_sample_length]  # Truncating to same length as a first solution
 
             assert len(en) == len(de), \
                 f'unexpected data mismatch for english={len(en)}, german={len(de)}'

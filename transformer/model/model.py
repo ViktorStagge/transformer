@@ -100,13 +100,17 @@ class Transformer(Model):
                           batch_size=batch_size)
         z_decoder = decoder([h_output, z_encoder])
 
-        dense = Dense(units=d_model,
-                      activation=None,
-                      name='dense')(z_decoder)
-        y = ReverseEmbedding(embedding_layer=embedder.embedding_layer[0],
-                             batch_size=batch_size,
-                             activation='softmax',
-                             name='output')(dense)
+        z_decoder_last = Lambda(lambda inputs: inputs[:, -1, :])(z_decoder)
+        y = Dense(units=vocab_size,
+                  activation='softmax',
+                  name='output_dense')(z_decoder_last)
+        # dense = Dense(units=d_model,
+        #               activation=None,
+        #               name='dense')(z_decoder)
+        # y = ReverseEmbedding(embedding_layer=embedder.embedding_layer[0],
+        #                      batch_size=batch_size,
+        #                      activation='softmax',
+        #                      name='output')(dense)
 
         _inputs = [x, x_output]
         _outputs = y

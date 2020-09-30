@@ -119,9 +119,9 @@ class Tokenizer(ByteLevelBPETokenizer):
                     filename = filename[:-4]
                     filename += '.pkl'
 
-                with open(os.path.join(tokens_output_dir, filename), 'wb') as file:
-                    _encoding = [e.ids for e in encoding]
-                    pickle.dump(_encoding, file)
+                save_tokens(output_dir=tokens_output_dir,
+                            filename=filename,
+                            encoding=encoding)
             if return_encodings:
                 encodings.append(encoding)
 
@@ -154,6 +154,20 @@ class Tokenizer(ByteLevelBPETokenizer):
                               merges_file=merges_path,
                               **config)
         return tokenizer
+
+
+def save_tokens(output_dir: str,
+                filename: str,
+                encoding):
+    with open(os.path.join(output_dir, filename), 'wb') as file:
+        _encoding = [e.ids for e in encoding]
+        pickle.dump(_encoding, file)
+
+
+def load_tokens(path):
+    with open(path, 'rb') as file:
+        tokens = pickle.load(file)
+    return tokens
 
 
 def _split_path(path=None, directory=None, name=None):
