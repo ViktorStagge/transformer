@@ -1,9 +1,9 @@
 from omegaconf import OmegaConf
 
-from transformer.config.default import config
+from transformer.config.default import config as default_config
 
 
-_configs = OmegaConf.create(dict(default=config))
+_configs = OmegaConf.create(dict(default=default_config))
 
 
 def get_config(path: str = 'default',
