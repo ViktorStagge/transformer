@@ -96,6 +96,7 @@ class ScaledDotProductAttention(Layer):
         q = K.dot(q, self.w_q)  # (batch, n_s, d_model) x (d_model, d_q)
         v = K.dot(v, self.w_v)
         k = K.dot(k, self.w_k)
+
         if len(k.shape) == 3:
             k_transpose = K.permute_dimensions(k, pattern=(0, 2, 1))
         else:
@@ -143,7 +144,7 @@ class ScaledDotProductAttention(Layer):
             shape_k = input_shape
             shape_v = input_shape
 
-        output_shape = (None, shape_q[1], self.d_v)
+        output_shape = (shape_q[0], shape_q[1], self.d_v)
         if self.verbose:
             print(f'   compute_output_shape: {output_shape}')
         return output_shape
@@ -225,13 +226,17 @@ class MultiHeadAttention(Layer):
         # return mask
 
     def compute_output_shape(self, input_shape):
-        assert isinstance(input_shape, list)
         head_shape = input_shape[-1]
-        assert len(head_shape) == 3, f'received: {head_shape}'
-        assert head_shape[1] == self.sequence_length, f'received: {head_shape}. {head_shape[1]} & {self.sequence_length}'
+
+        assert isinstance(input_shape, list), \
+            f'expected a multiple inputs (1 per head).'
+        assert len(head_shape) == 3, \
+            f'received: {head_shape}'
+        assert head_shape[1] == self.sequence_length, \
+            f'received: {head_shape}. {head_shape[1]} & {self.sequence_length}'
         assert head_shape[2] == self.d_v
 
-        return None, self.sequence_length, self.d_model
+        return head_shape[0], self.sequence_length, self.d_model
 
     def get_config(self):
         config = super().get_config()

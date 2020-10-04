@@ -18,11 +18,11 @@ class _Config:
     use_positional_encoding: bool = False
     use_mask: bool = True
     tqdm: Optional[str] = 'tqdm'  # [tqdm, tqdm-notebook, None]
-    logging_level: str = 'info'  # [info, debug, critical]
+    logging_level: str = 'debug'  # [info, debug, critical]
 
     # ### Run ### #
     tokenize: bool = False
-    create_dataset: bool = True
+    create_dataset: bool = False
     train: bool = True
 
     # ### Preprocess: Tokenize ### #
@@ -39,22 +39,23 @@ class _Config:
 
     # ### Training ### #
     retrain: bool = True
-    train_steps: int = 12000000
+    train_steps: int = 10000000
     validation_steps: int = 100000
     learning_rates: Dict[str, int] = field(default_factory=dict)
+    warmup_steps: int = 4000
 
-    epochs: int = 500
-    batch_size: int = 2048  # tokens
+    epochs: int = 100
+    batch_size: int = 64  # tokens
     d_layers: int = 1
     d_heads: int = 2
     sequence_length: int = sample_length
     d_model: int = 128
     d_k: int = d_model // d_heads
     d_v: int = d_model // d_heads
-    d_mlp_hidden: int = 128
+    d_mlp_hidden: int = 256
     output_size: int = vocab_size
     steps_per_epoch: int = train_steps//sequence_length - 1
-    save_interval_training: int = 5000
+    save_interval_training: int = 500000
 
     # ### Paths ### #
     input_dir: str = 'data/wma-en-de/input/v1/'

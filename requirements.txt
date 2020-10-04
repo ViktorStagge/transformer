@@ -1,8 +1,9 @@
+tokenizers
+tensorflow
 omegaconf
 sometimer
-tokenizers
+pandas
 keras
-tensorflow
 click
 tqdm
-pandas
+nltk

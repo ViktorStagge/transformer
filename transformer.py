@@ -1,4 +1,4 @@
-from transformer.cli.cli import main_group
+from transformer import cli
 
 if __name__ == '__main__':
-    main_group()
+    cli.main_group()

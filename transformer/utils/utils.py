@@ -52,6 +52,11 @@ class Logger(logging.Logger):
         message = str(message)
         self.info(message, *args, **kwargs)
 
+    def setLevel(self, level):
+        if isinstance(level, str):
+            level = level.upper()
+        return super().setLevel(level)
+
 
 def get_logger(name: str = None,
                format: str = None,

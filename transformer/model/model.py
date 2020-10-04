@@ -1,31 +1,22 @@
 import warnings
-import numpy as np
+from typing import Dict, \
+    Optional, \
+    Any
 
-from typing import List, \
-                   Dict, \
-                   Optional, \
-                   Union, \
-                   Any
 from keras import backend as K
-from keras.layers import Embedding, \
-                         Dense, \
-                         Dropout, \
-                         Flatten, \
-                         Input, \
-                         Add, \
-                         Lambda, \
-                         concatenate as Concatenate
-from keras.models import Model, \
-                         Sequential
+from keras.layers import Dense, \
+    Input, \
+    Lambda
+from keras.models import Model
 
-from transformer.model.layers import MultiHeadAttention, \
-                                     ScaledDotProductAttention, \
-                                     LayerNormalization, \
-                                     ReverseEmbedding, \
-                                     PositionalEncoding
+from transformer.model.decoder import Decoder
 from transformer.model.embedder import Embedder
 from transformer.model.encoder import Encoder
-from transformer.model.decoder import Decoder
+from transformer.model.layers import MultiHeadAttention, \
+    ScaledDotProductAttention, \
+    LayerNormalization, \
+    ReverseEmbedding, \
+    PositionalEncoding
 from transformer.model.optimizers import get_optimizer
 
 
@@ -33,6 +24,7 @@ class Transformer(Model):
     """Transformer as described in "Attention is All You Need" by Vaswani et. al.
     """
     def __init__(self,
+                 batch_size: int,
                  sequence_length: int,
                  vocab_size: int = 16384,
                  d_layers: int = 1,
@@ -43,10 +35,10 @@ class Transformer(Model):
                  d_mlp_hidden: int = 1024,
                  dropout_embedding: float = 0.1,
                  dropout_mlp: float = 0.1,
-                 batch_size: Optional[int] = None,
                  name: str = 'Transformer',
                  use_mask: bool = True,
                  use_positional_encoding: bool = True,
+                 previous_epoch_steps: int = 0,
                  **kwargs):
         if batch_size != sequence_length:
             warnings.warn('batch_size and sequence_length have to be of the same size to '
@@ -61,10 +53,12 @@ class Transformer(Model):
         d_q = d_k
 
         # Build the internal model structure
-        x = Input(shape=(sequence_length,),
+        x = Input(batch_shape=(batch_size, sequence_length),
                   name='x')
-        x_output = Input(shape=(sequence_length,),
+        x_output = Input(batch_shape=(batch_size, sequence_length),
                          name='x_output')
+        x_position = Input(batch_shape=(batch_size, sequence_length),
+                           name='x_position')
 
         # Embed & Encode the input/output sequence
         embedder = Embedder(sequence_length=sequence_length,
@@ -80,6 +74,7 @@ class Transformer(Model):
         encoder = Encoder(sequence_length=sequence_length,
                           d_layers=d_layers,
                           d_heads=d_heads,
+                          d_model=d_model,
                           d_k=d_k,
                           d_v=d_v,
                           d_mlp_hidden=d_mlp_hidden,
@@ -92,6 +87,7 @@ class Transformer(Model):
         decoder = Decoder(sequence_length=sequence_length,
                           d_layers=d_layers,
                           d_heads=d_heads,
+                          d_model=d_model,
                           d_k=d_k,
                           d_v=d_v,
                           d_mlp_hidden=d_mlp_hidden,
@@ -100,10 +96,10 @@ class Transformer(Model):
                           batch_size=batch_size)
         z_decoder = decoder([h_output, z_encoder])
 
-        z_decoder_last = Lambda(lambda inputs: inputs[:, -1, :])(z_decoder)
+        z_decoder_target = Lambda(lambda inputs: K.batch_dot(inputs, x_position, axes=(1, 1)))(z_decoder)
         y = Dense(units=vocab_size,
                   activation='softmax',
-                  name='output_dense')(z_decoder_last)
+                  name='output_dense')(z_decoder_target)
         # dense = Dense(units=d_model,
         #               activation=None,
         #               name='dense')(z_decoder)
@@ -112,7 +108,7 @@ class Transformer(Model):
         #                      activation='softmax',
         #                      name='output')(dense)
 
-        _inputs = [x, x_output]
+        _inputs = [x, x_output, x_position]
         _outputs = y
 
         super().__init__(inputs=_inputs,
@@ -133,7 +129,10 @@ class Transformer(Model):
         self.d_mlp_hidden = d_mlp_hidden
         self.dropout_embedding = dropout_embedding
         self.dropout_mlp = dropout_mlp
+        self.batch_size = batch_size
+        self.use_mask = use_mask
         self.use_positional_encoding = use_positional_encoding
+        self.previous_epoch_steps = previous_epoch_steps
 
     def compile(self,
                 optimizer,
@@ -171,6 +170,7 @@ class Transformer(Model):
                                       d_mlp_hidden=self.d_mlp_hidden,
                                       dropout_embedding=self.dropout_embedding,
                                       dropout_mlp=self.dropout_mlp,
+                                      use_mask=self.use_mask,
                                       use_positional_encoding=self.use_positional_encoding))
         return config
 
@@ -204,6 +204,7 @@ class Transformer(Model):
 
         if custom_objects is None:
             custom_objects = {'Transformer': Transformer,
+                              'Embedder': Embedder,
                               'Encoder': Encoder,
                               'Decoder': Decoder,
                               'PositionalEncoding': PositionalEncoding,
@@ -212,6 +213,19 @@ class Transformer(Model):
                               'LayerNormalization': LayerNormalization,
                               'ReverseEmbedding': ReverseEmbedding}
 
-        model = load_model(filepath, custom_objects=custom_objects, compile=compile)
+        model = load_model(filepath,
+                           custom_objects=custom_objects,
+                           compile=compile)
 
         return model
+
+
+def select_target_output(target_position):
+    def _select_target_output(inputs):
+        import tensorflow as tf
+
+        unstacked = tf.unstack(inputs, axis=0)
+        selected = [batch_entry[index, :] for index, batch_entry in zip(unstacked, target_position)]
+        stacked = tf.stack(selected, axis=0)
+        return stacked
+    return _select_target_output

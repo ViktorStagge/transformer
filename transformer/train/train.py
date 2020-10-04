@@ -3,20 +3,17 @@ import pickle
 
 from typing import Optional, Iterable
 
+from transformer.train import callbacks
 from transformer.config import get_config
 from transformer.preprocess import Tokenizer
 from transformer.preprocess import load_tokens
 from transformer.preprocess import create_training_dataset
 from transformer.model import Transformer
 from transformer.train.generators import NextTokenBatchGenerator
-from transformer.train.callbacks import WriteLogsToFile, \
-                                        SaveModel, \
-                                        AlterLearningRate, \
-                                        PrintExamples
 from transformer.utils import get_tqdm
 from transformer.utils import get_logger
 
-logger = get_logger('transformer>train.py')
+logger = get_logger('transformer.train')
 
 
 def train(config_path: str = 'default',
@@ -29,11 +26,11 @@ def train(config_path: str = 'default',
     ought to be done beforehand if required using a custom preprocess.initial_cleanup for each
     respective dataset used.
     """
-    logger('Start Training.')
     config = get_config(config_path)
     tqdm = get_tqdm(tqdm or config.get('tqdm'))
     logger.setLevel(config.logging_level)
 
+    logger('Start Training.')
     # ### Setup ### #
     if config.tokenize:
         logger('> creating tokenizer...')
@@ -110,17 +107,19 @@ def train(config_path: str = 'default',
                                         sample_length=config.sample_length)
 
     logger('>>> creating callbacks')
-    callbacks = [WriteLogsToFile(filepath=config.train_logs_output_path, overwrite_old_file=False),
-                 SaveModel(filepath=config.model_output_path,
-                           save_every_n_batches=config.save_interval_training),
-                 # AlterLearningRate(learning_rates=config.learning_rates)
-                 PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger)
-                 ]
+    use_callbacks = [callbacks.WriteLogsToFile(filepath=config.train_logs_output_path, overwrite_old_file=False),
+                     # callbacks.SaveModel(filepath=config.model_output_path,
+                     #                     save_every_n_batches=config.save_interval_training),
+                     callbacks.PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger),
+                     callbacks.VaswaniLearningRate(steps_per_epoch=generator.steps_per_epoch,
+                                                   warmup_steps=config.warmup_steps,
+                                                   print_fn=logger.debug)
+                     ]
 
     logger('> starting training of model')
     model.fit_generator(generator(),
                         steps_per_epoch=generator.steps_per_epoch,
                         epochs=config.epochs,
-                        callbacks=callbacks,
+                        callbacks=use_callbacks,
                         shuffle=False)
     logger('Completed Training.')

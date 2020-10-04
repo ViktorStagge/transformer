@@ -66,10 +66,11 @@ class NextTokenBatchGenerator:
 
                     y_target = np.array(list(row[col] for row, col in zip(y, y_position)))
 
+                    x_output = y.copy()
                     for i, pos in enumerate(y_position):
-                        y[i, pos] = 0.
-                    # y[list(range(len(y))), y_position] = 0.
-                    x_output = y
+                        x_output[i, pos] = 0.
+                    x_output = np.roll(x_output, shift=1, axis=1)
+
                     logger.debug(f'x_output={len(x_output)}, y_target={len(y_target)}')
 
                     end_step = sum(max(len(e), len(d)) for e, d in zip(english_samples, german_samples))
@@ -82,14 +83,22 @@ class NextTokenBatchGenerator:
                         x_input_batch = x_input[i: i+self.batch_size]
                         x_output_batch = x_output[i: i+self.batch_size]
                         y_target_batch = y_target[i: i+self.batch_size]
+                        y_position_batch = y_position[i: i+self.batch_size]
 
-                        x_batch = [x_input_batch, x_output_batch]
+                        y_position_matrix_batch = np.full(shape=(len(y_position_batch), self.sample_length),
+                                                          fill_value=1e-7)
+                        for index, target_position in enumerate(y_position_batch):
+                            y_position_matrix_batch[index, target_position] = 1
+
+                        x_batch = [x_input_batch, x_output_batch, y_position_matrix_batch]
                         y_batch = to_categorical(y_target_batch, num_classes=self.vocab_size)
 
                         epoch_step += self.batch_size
+                        # yield x_batch, y_batch, y_position_batch  # TODO: sort position-selection for unknown batch size
                         yield x_batch, y_batch
 
-        # must have a callable `__next__` for keras `fit_generator` to function properly ...
+        # must have a callable `__next__` for keras `fit_generator` to function properly .
+        # So to avoid having to use the generator by `iter(generator)`
         return iter(_next_token_batch_generator())
 
     def new(self):

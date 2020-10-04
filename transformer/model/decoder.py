@@ -39,9 +39,9 @@ class Decoder(Model):
         d_q = d_k
 
         # Build the internal model structure
-        h_output = Input(shape=(sequence_length, d_model),
+        h_output = Input(batch_shape=(batch_size, sequence_length, d_model),
                          name='h_output')
-        z_encoder = Input(shape=(sequence_length, d_model),
+        z_encoder = Input(batch_shape=(batch_size, sequence_length, d_model),
                           name='z_encoder')
 
         h = h_output

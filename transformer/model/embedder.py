@@ -20,9 +20,9 @@ class Embedder(Model):
                  use_positional_encoding: bool = True,
                  use_mask: bool = True,
                  **kwargs):
-        x = Input(shape=(sequence_length,),
+        x = Input(batch_shape=(batch_size, sequence_length),
                   name='x')
-        x_output = Input(shape=(sequence_length,),
+        x_output = Input(batch_shape=(batch_size, sequence_length),
                          name='x_output')
 
         # Embedding

@@ -40,7 +40,7 @@ class Encoder(Model):
         d_q = d_k
 
         # Build the internal model structure
-        h_L0 = Input(shape=(sequence_length, d_model),
+        h_L0 = Input(batch_shape=(batch_size, sequence_length, d_model),
                      name='h_L0')
 
         h = h_L0

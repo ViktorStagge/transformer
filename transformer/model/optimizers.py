@@ -8,7 +8,7 @@ from dataclasses import dataclass
 class Adam:
     learning_rate: float = 0.001
     beta_1: float = 0.9
-    beta_2: float = 0.999
+    beta_2: float = 0.98  # 0.999 in Compressive Transformer
     clipnorm: float = 0.1
 
 
