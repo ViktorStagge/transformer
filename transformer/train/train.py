@@ -67,10 +67,12 @@ def train(config_path: str = 'default',
         create_training_dataset(english_tokens=english_tokens,
                                 german_tokens=german_tokens,
                                 max_samples=config.max_samples,
+                                validation_split=config.validation_split,
                                 sample_length=config.sample_length,
                                 save_dataset=config.save_training_dataset,
                                 save_interval=config.save_interval,
                                 save_dir=config.processed_dir,
+                                save_dir_validation=config.processed_dir_validation,
                                 save_compression=config.compression,
                                 tqdm=tqdm)
 
@@ -87,14 +89,15 @@ def train(config_path: str = 'default',
                             vocab_size=config.vocab_size,
                             use_mask=config.use_mask,
                             use_positional_encoding=config.use_positional_encoding)
+
+        logger('>>> compiling Transformer model')
+        model.compile(optimizer='Adam',
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
     else:
         logger('> loading Transformer model')
-        model = Transformer.load(config.model_output_path, compile=False)
-
-    logger('>>> compiling Transformer model')
-    model.compile(optimizer='Adam',
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
+        model = Transformer.load(config.model_output_path,
+                                 compile=True)
 
     if config.verbose:
         model.summary(print_fn=logger)
@@ -105,20 +108,26 @@ def train(config_path: str = 'default',
                                         batch_size=config.batch_size,
                                         vocab_size=config.vocab_size,
                                         sample_length=config.sample_length)
+    validation_generator = NextTokenBatchGenerator(data_dir=config.processed_dir_validation,
+                                                   epoch_steps=config.validation_steps,
+                                                   batch_size=config.batch_size,
+                                                   vocab_size=config.vocab_size,
+                                                   sample_length=config.sample_length)
 
     logger('>>> creating callbacks')
-    use_callbacks = [callbacks.WriteLogsToFile(filepath=config.train_logs_output_path, overwrite_old_file=False),
-                     # callbacks.SaveModel(filepath=config.model_output_path,
-                     #                     save_every_n_batches=config.save_interval_training),
-                     callbacks.PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger),
-                     callbacks.VaswaniLearningRate(steps_per_epoch=generator.steps_per_epoch,
+    use_callbacks = [callbacks.VaswaniLearningRate(steps_per_epoch=generator.steps_per_epoch,
                                                    warmup_steps=config.warmup_steps,
-                                                   print_fn=logger.debug)
-                     ]
+                                                   print_fn=logger.debug),
+                     callbacks.WriteLogsToFile(filepath=config.train_logs_output_path, overwrite_old_file=False),
+                     callbacks.SaveModel(filepath=config.model_output_path,
+                                         on_epoch_end=True),
+                     callbacks.PrintExamples(tokenizer=tokenizer, generator=generator, print_fn=logger)]
 
     logger('> starting training of model')
-    model.fit_generator(generator(),
+    model.fit_generator(generator=generator(),
+                        validation_data=validation_generator(),
                         steps_per_epoch=generator.steps_per_epoch,
+                        validation_steps=validation_generator.steps_per_epoch,
                         epochs=config.epochs,
                         callbacks=use_callbacks,
                         shuffle=False)

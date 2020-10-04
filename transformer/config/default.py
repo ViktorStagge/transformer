@@ -13,7 +13,7 @@ from omegaconf import OmegaConf
 class _Config:
     # ### Meta ### #
     dataset: str = 'wma-en-de'
-    version: int = 2
+    version: int = 3
     verbose: bool = True
     use_positional_encoding: bool = False
     use_mask: bool = True
@@ -32,7 +32,8 @@ class _Config:
     sample_length: int = 100
 
     # ### Preprocess: Create [training] Dataset ### #
-    max_samples: Optional[int] = 1000000
+    max_samples: Optional[int] = 1250000
+    validation_split: float = 0.2
     save_training_dataset: bool = True
     save_interval: int = 200  # maximum samples per file
     compression: str = 'zipfile'  # ['pickle', 'gzip', 'bz2', 'lzma', 'zipfile', 'lz4']
@@ -40,8 +41,7 @@ class _Config:
     # ### Training ### #
     retrain: bool = True
     train_steps: int = 10000000
-    validation_steps: int = 100000
-    learning_rates: Dict[str, int] = field(default_factory=dict)
+    validation_steps: int = 20000
     warmup_steps: int = 4000
 
     epochs: int = 100
@@ -65,6 +65,7 @@ class _Config:
                                  f'v{version}.tok'
     tokens_output_dir: str = f'data/wma-en-de/tokenized/v{version}'
     processed_dir: str = f'data/wma-en-de/processed/v{version}/'
+    processed_dir_validation: str = f'data/wma-en-de/processed/v{version}-val/'
     train_logs_output_path: str = f'data/wma-en-de/training-logs/transformer-wma-en-de-v{version}.txt'
     model_output_path: str = f'data/wma-en-de/model/' \
                              f'transformer-wma-en-de-' \
@@ -79,11 +80,7 @@ class _Config:
 
 config = OmegaConf.structured(_Config)
 
-# Additional Nested Fields
-config.learning_rates = {'0': 0.001,
-                         '10': 0.001}
-
-# Some interpolated fields
+# Interpolated fields
 config.logging_level = config.logging_level.upper()
 if os.path.exists(config.input_dir):
     config.input_paths = [os.path.join(config.input_dir, filename) for filename in os.listdir(config.input_dir)]

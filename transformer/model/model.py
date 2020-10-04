@@ -96,7 +96,7 @@ class Transformer(Model):
                           batch_size=batch_size)
         z_decoder = decoder([h_output, z_encoder])
 
-        z_decoder_target = Lambda(lambda inputs: K.batch_dot(inputs, x_position, axes=(1, 1)))(z_decoder)
+        z_decoder_target = Lambda(lambda inputs: K.batch_dot(inputs[0], inputs[1], axes=(1, 1)))([z_decoder, x_position])
         y = Dense(units=vocab_size,
                   activation='softmax',
                   name='output_dense')(z_decoder_target)
@@ -164,14 +164,14 @@ class Transformer(Model):
                                       d_layers=self.d_layers,
                                       d_heads=self.d_heads,
                                       d_model=self.d_model,
-                                      d_q=self.d_q,
                                       d_k=self.d_k,
                                       d_v=self.d_v,
                                       d_mlp_hidden=self.d_mlp_hidden,
                                       dropout_embedding=self.dropout_embedding,
                                       dropout_mlp=self.dropout_mlp,
                                       use_mask=self.use_mask,
-                                      use_positional_encoding=self.use_positional_encoding))
+                                      use_positional_encoding=self.use_positional_encoding,
+                                      previous_epoch_steps=self.previous_epoch_steps))
         return config
 
     @classmethod
@@ -218,14 +218,3 @@ class Transformer(Model):
                            compile=compile)
 
         return model
-
-
-def select_target_output(target_position):
-    def _select_target_output(inputs):
-        import tensorflow as tf
-
-        unstacked = tf.unstack(inputs, axis=0)
-        selected = [batch_entry[index, :] for index, batch_entry in zip(unstacked, target_position)]
-        stacked = tf.stack(selected, axis=0)
-        return stacked
-    return _select_target_output
