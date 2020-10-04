@@ -47,7 +47,7 @@ class Decoder(Model):
         h = h_output
         for i in range(d_layers):
             # Masked Multi-Head Attention [masked before embedding h_output]
-            masked_sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]  # TODO: d_q, d_k, d_v
+            masked_sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]
             masked_sdpa = [sdpa_layer([h, h]) for sdpa_layer in masked_sdpa_layers]
 
             masked_mha = MultiHeadAttention(d_heads=d_heads,
@@ -60,7 +60,7 @@ class Decoder(Model):
             masked_a = LayerNormalization(name=f'masked_mha_layer_norm_L{i}')(masked_mha_skip)
 
             # Multi-Head Attention
-            sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]  # TODO: d_q, d_k, d_v. before d_model, d_k, d_model
+            sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]
             sdpa = [sdpa_layer([z_encoder, masked_a]) for sdpa_layer in sdpa_layers]  # TODO: check [h, h]
 
             mha = MultiHeadAttention(d_heads=d_heads,

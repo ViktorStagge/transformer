@@ -46,8 +46,8 @@ class Encoder(Model):
         h = h_L0
         for i in range(d_layers):
             # #### Multi Head Attention #####
-            sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]  # TODO: d_q, d_k, d_v
-            sdpa = [sdpa_layer([h, h]) for sdpa_layer in sdpa_layers]  # TODO: check [h, h]
+            sdpa_layers = [ScaledDotProductAttention(d_model=d_model, d_k=d_k, d_v=d_v) for _ in range(d_heads)]
+            sdpa = [sdpa_layer([h, h]) for sdpa_layer in sdpa_layers]
 
             mha = MultiHeadAttention(d_heads=d_heads,
                                      sequence_length=sequence_length,
